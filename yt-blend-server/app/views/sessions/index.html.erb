@@ -1,0 +1,9 @@
+<% flash.each do |type, msg| %>
+  <div>
+    <%= "#{type} : #{msg}" %>
+  </div>
+<% end %>
+
+Currently <%= @rooms %> online!
+
+<%= link_to "Create new room", create_session_path, method: :post %>
