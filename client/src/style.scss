@@ -1,0 +1,25 @@
+$dark: #202020;
+$accent: #ff0000;
+$text: #fff;
+
+$theme-colors: (
+  "dark": $dark,
+  "accent": $accent,
+  "text": $text
+);
+
+html,
+body,
+.container,
+.container-fluid,
+#root {
+  background-color: $dark;
+  color: $text;
+  font-family: Roboto, Arial, sans-serif;
+}
+
+.btn-accent {
+  color: $text !important;
+}
+
+@import "~bootstrap/scss/bootstrap";

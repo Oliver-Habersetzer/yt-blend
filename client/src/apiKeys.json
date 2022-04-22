@@ -1,0 +1,13 @@
+{
+  "YouTube": "AIzaSyCb_-uOcdagOUyQnwKye0OXNhG6H1p1VlA",
+  "YouTubeClient": {
+    "client_id": "334327590432-802k5oq6njrk85e56man6l9kioaghp3m.apps.googleusercontent.com",
+    "project_id": "yt-blend",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_secret": "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",
+    "redirect_uris": ["http://localhost:3000"],
+    "javascript_origins": ["http://localhost:3000"]
+  }
+}
