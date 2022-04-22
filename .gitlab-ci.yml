@@ -1,0 +1,25 @@
+image: node:14
+
+build:
+  stage: build
+  script:
+    - set -euo pipefail
+    - export CI='' # Disable yarn CI-detection (treats warnings as errors)
+    - yarn --non-interactive
+    - yarn build
+  cache:
+    policy: pull-push
+    paths:
+      - node_modules/
+  artifacts:
+    paths:
+      - build
+
+pages:
+  stage: deploy
+  script:
+    - set -euo pipefail
+    - mv build public
+  artifacts:
+    paths:
+      - public
