@@ -1,6 +1,12 @@
 import ApiKeys from "../data/ApiKeys";
 import ChannelsPartSnippet from "../data/youtube-api/ChannelsPartSnippet";
 
+interface Channel {
+  name: string;
+  thumbnail: string;
+}
+
+// https://console.cloud.google.com/apis/credentials/consent?project=yt-blend
 export default class ApiConnection {
   private apiKeys: ApiKeys;
   private youtubeClientAccessToken?: string;
@@ -52,6 +58,24 @@ export default class ApiConnection {
           )
             return resolve(data.items[0].snippet.localized.title);
           return resolve(true);
+        })
+        .catch((err) => reject(err));
+    });
+  }
+
+  // https://developers.google.com/youtube/v3/docs/subscriptions/list
+  public async getSubscriptions(): Promise<unknown> {
+    return new Promise<unknown>((resolve, reject) => {
+      if (this.youtubeClientAccessToken === undefined) return resolve(false);
+
+      fetch(
+        `https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&mine=true&access_token=${encodeURIComponent(
+          this.youtubeClientAccessToken
+        )}`
+      )
+        .then((response) => response.json() as Promise<unknown>)
+        .then((data) => {
+          console.debug(data);
         })
         .catch((err) => reject(err));
     });

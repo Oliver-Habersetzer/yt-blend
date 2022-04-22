@@ -76,15 +76,25 @@ class App extends React.Component<IProps, IState> {
         {this.state.error && <div>${this.state.error}</div>}
         {this.state.isLoggedIn ? (
           <>
-            <span>
-              Logged in{this.state.username && <> as {this.state.username}</>}
-            </span>
-            <span
-              onClick={() => this.logout()}
-              className="btn btn-sm btn-accent"
-            >
-              Log out
-            </span>
+            <div>
+              <span>
+                Logged in{this.state.username && <> as {this.state.username}</>}
+              </span>
+              <span
+                onClick={() => this.logout()}
+                className="btn btn-sm btn-accent"
+              >
+                Log out
+              </span>
+            </div>
+            <div>
+              <span
+                onClick={() => this.getSubscriptions()}
+                className="btn btn-sm btn-accent"
+              >
+                Get subscriptions
+              </span>
+            </div>
           </>
         ) : (
           <span onClick={() => this.login()} className="btn btn-sm btn-accent">
@@ -102,6 +112,10 @@ class App extends React.Component<IProps, IState> {
   logout() {
     this.props.cookies.remove(YT_CLIENT_ACCESS_TOKEN_KEY);
     window.location.reload();
+  }
+
+  getSubscriptions() {
+    this.state.apiConnection.getSubscriptions();
   }
 }
 
