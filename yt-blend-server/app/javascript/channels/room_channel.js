@@ -69,7 +69,6 @@ const createPeerConnection = (user, isOffer) => {
 
   pc.sendChannel.onopen = (event) => {
     console.log("Data channel opened");
-    pc.sendChannel.send("Yoyo?");
   };
 
   pc.onicecandidate = (event) => {
