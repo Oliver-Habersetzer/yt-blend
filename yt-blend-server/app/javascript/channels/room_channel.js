@@ -14,7 +14,6 @@ let session_id;
 
 let pcPeers = {};
 
-
 document.addEventListener('turbolinks:load', function() {
   room_id = document.getElementById("room-id").getAttribute("data-room-id");
   session_id = document.getElementById("session-id").getAttribute("data-session-id");
@@ -52,6 +51,7 @@ document.addEventListener('turbolinks:load', function() {
           exchange(data);
           break;
         case LEAVE:
+          delete pcPeers[data.user];
           break;
         default:
           console.log("Unknown message type", data);
@@ -71,6 +71,12 @@ const createPeerConnection = (user, isOffer) => {
     console.log("Data channel opened");
   };
 
+  pc.sendChannel.onclose = (event) => {
+    broadcast(LEAVE, {
+      user: user
+    })
+  }
+
   pc.onicecandidate = (event) => {
     event.candidate &&
     broadcast(EXCHANGE, {
@@ -80,14 +86,14 @@ const createPeerConnection = (user, isOffer) => {
     });
   };
 
-  pc.oniceconnectionstatechange = () => {
+  /*pc.oniceconnectionstatechange = () => {
     if (pc.iceConnectionState === "disconnected") {
       console.log("Disconnected:", user);
       broadcast(LEAVE, {
         user: user,
       });
     }
-  };
+  };*/
 
   pc.ondatachannel = (event) => {
     pc.receiveChannel = event.channel;
