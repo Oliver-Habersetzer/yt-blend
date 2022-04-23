@@ -7,6 +7,11 @@ class SessionsController < ApplicationController
     redirect_to session_show_url(@room_id)
   end
 
+  def broadcast
+    ActionCable.server.broadcast "room_#{broadcast_params[:room_id]}", {
+      :message => broadcast_params[:message], :from => broadcast_params[:user]}
+  end
+
   def index
     @rooms = $redis.DBSIZE
   end
@@ -32,6 +37,12 @@ class SessionsController < ApplicationController
 
       redirect_to sessions_url
     end
+  end
+
+  private
+
+  def broadcast_params
+    params.require(:session).permit(:room_id, :user, :message)
   end
 
 end
