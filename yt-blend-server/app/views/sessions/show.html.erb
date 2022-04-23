@@ -4,9 +4,13 @@
   </div>
 <% end %>
 
+<%= javascript_pack_tag "room_channel", room_id: @room_id %>
+
 <p>In room <%= @room_id %></p>
 <input id="room-id" hidden data-room-id="<%= @room_id %>"/>
 <input id="session-id" hidden data-session-id="<%= session[:session_id] %>"/>
+
+<div id="react-root"></div>
 
 <button id="test-rtc">Test RTC</button>
 
