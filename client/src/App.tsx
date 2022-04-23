@@ -5,12 +5,17 @@ const apiKeys: ApiKeys = _apiKeys as ApiKeys;
 import ApiConnection from "./logic/ApiConnection";
 import { Cookies, withCookies } from "react-cookie";
 import "./style.scss";
+import { Alert } from "react-bootstrap";
+import Channel from "./data/Channel";
+import ChannelList from "./Components/ChannelList";
 
 interface IState {
-  apiConnection: ApiConnection;
+  apiConnection?: ApiConnection;
   isLoggedIn: boolean;
   username?: string;
   error?: string;
+
+  subscriptions?: Channel[];
 }
 
 interface IProps {
@@ -26,7 +31,10 @@ class App extends React.Component<IProps, IState> {
     const search = window.location.search + window.location.hash;
     if (search !== "") {
       const searchParams = [...new URLSearchParams(search).entries()];
-      console.debug("search / hash params:", searchParams);
+      console.debug(
+        "search / hash params:",
+        JSON.stringify(searchParams, undefined, 4)
+      );
 
       for (const param of searchParams) {
         switch (param[0]) {
@@ -48,16 +56,20 @@ class App extends React.Component<IProps, IState> {
     }
 
     this.state = {
-      apiConnection: new ApiConnection(
-        apiKeys,
-        props.cookies.get(YT_CLIENT_ACCESS_TOKEN_KEY)
-      ),
       isLoggedIn: false,
     };
   }
 
   componentDidMount() {
-    this.state.apiConnection
+    const apiConnection = new ApiConnection(
+      apiKeys,
+      this.props.cookies.get(YT_CLIENT_ACCESS_TOKEN_KEY)
+    );
+    this.setState({
+      apiConnection: apiConnection,
+    });
+
+    apiConnection
       .isLoggedIn()
       .then((loggedIn: boolean | string) => {
         this.setState({
@@ -66,6 +78,7 @@ class App extends React.Component<IProps, IState> {
         });
       })
       .catch((error) => {
+        this.props.cookies.remove(YT_CLIENT_ACCESS_TOKEN_KEY);
         this.setState({ error: `Error: ${error}` });
       });
   }
@@ -73,7 +86,7 @@ class App extends React.Component<IProps, IState> {
   render() {
     return (
       <div className="container">
-        {this.state.error && <div>${this.state.error}</div>}
+        {this.state.error && <Alert variant="danger">{this.state.error}</Alert>}
         {this.state.isLoggedIn ? (
           <>
             <div>
@@ -95,6 +108,11 @@ class App extends React.Component<IProps, IState> {
                 Get subscriptions
               </span>
             </div>
+            <div className="p-1">
+              {this.state.subscriptions && (
+                <ChannelList channels={this.state.subscriptions} />
+              )}
+            </div>
           </>
         ) : (
           <span onClick={() => this.login()} className="btn btn-sm btn-accent">
@@ -106,7 +124,7 @@ class App extends React.Component<IProps, IState> {
   }
 
   login() {
-    this.state.apiConnection.loginClient();
+    if (this.state.apiConnection) this.state.apiConnection.loginClient();
   }
 
   logout() {
@@ -115,7 +133,15 @@ class App extends React.Component<IProps, IState> {
   }
 
   getSubscriptions() {
-    this.state.apiConnection.getSubscriptions();
+    if (this.state.apiConnection)
+      this.state.apiConnection
+        .getSubscriptions()
+        .then((subscriptions) => {
+          this.setState({ subscriptions: subscriptions });
+        })
+        .catch((error) => {
+          this.setState({ error: error });
+        });
   }
 }
 

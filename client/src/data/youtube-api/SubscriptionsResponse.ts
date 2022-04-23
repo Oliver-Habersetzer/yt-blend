@@ -3,22 +3,21 @@ export interface PageInfo {
   resultsPerPage: number;
 }
 
+export interface ResourceId {
+  kind: string;
+  channelId: string;
+}
+
 export interface Default {
   url: string;
-  width: number;
-  height: number;
 }
 
 export interface Medium {
   url: string;
-  width: number;
-  height: number;
 }
 
 export interface High {
   url: string;
-  width: number;
-  height: number;
 }
 
 export interface Thumbnails {
@@ -27,17 +26,19 @@ export interface Thumbnails {
   high: High;
 }
 
-export interface Localized {
+export interface Snippet {
+  publishedAt: Date;
   title: string;
   description: string;
+  resourceId: ResourceId;
+  channelId: string;
+  thumbnails: Thumbnails;
 }
 
-export interface Snippet {
-  title: string;
-  description: string;
-  publishedAt: Date;
-  thumbnails: Thumbnails;
-  localized: Localized;
+export interface ContentDetails {
+  totalItemCount: number;
+  newItemCount: number;
+  activityType: string;
 }
 
 export interface Item {
@@ -45,11 +46,14 @@ export interface Item {
   etag: string;
   id: string;
   snippet: Snippet;
+  contentDetails: ContentDetails;
 }
 
-export default interface ChannelsPartSnippet {
+export default interface SubscriptionsResponse {
   kind: string;
   etag: string;
+  nextPageToken: string;
+  prevPageToken: string;
   pageInfo: PageInfo;
   items: Item[];
 }
