@@ -8,6 +8,8 @@ import "./style.scss";
 import { Alert } from "react-bootstrap";
 import Channel from "./data/Channel";
 import ChannelList from "./Components/ChannelList";
+import Video from "./data/Video";
+import VideoList from "./Components/VideoList";
 
 interface IState {
   apiConnection?: ApiConnection;
@@ -16,6 +18,8 @@ interface IState {
   error?: string;
 
   subscriptions?: Channel[];
+  likedVideos?: Video[];
+  dislikedVideos?: Video[];
 }
 
 interface IProps {
@@ -78,7 +82,7 @@ class App extends React.Component<IProps, IState> {
         });
       })
       .catch((error) => {
-        this.props.cookies.remove(YT_CLIENT_ACCESS_TOKEN_KEY);
+        // this.props.cookies.remove(YT_CLIENT_ACCESS_TOKEN_KEY);
         this.setState({ error: `Error: ${error}` });
       });
   }
@@ -86,7 +90,9 @@ class App extends React.Component<IProps, IState> {
   render() {
     return (
       <div className="container">
-        {this.state.error && <Alert variant="danger">{this.state.error}</Alert>}
+        {this.state.error && (
+          <Alert variant="danger">{`${this.state.error}`}</Alert>
+        )}
         {this.state.isLoggedIn ? (
           <>
             <div>
@@ -100,6 +106,8 @@ class App extends React.Component<IProps, IState> {
                 Log out
               </span>
             </div>
+
+            {/* subscriptions */}
             <div>
               <span
                 onClick={() => this.getSubscriptions()}
@@ -108,11 +116,41 @@ class App extends React.Component<IProps, IState> {
                 Get subscriptions
               </span>
             </div>
-            <div className="p-1">
-              {this.state.subscriptions && (
+            {this.state.subscriptions && (
+              <div className="p-1">
                 <ChannelList channels={this.state.subscriptions} />
-              )}
+              </div>
+            )}
+
+            {/* liked videos */}
+            <div>
+              <span
+                onClick={() => this.getLikedVideos()}
+                className="btn btn-sm btn-accent"
+              >
+                Get liked videos
+              </span>
             </div>
+            {this.state.likedVideos && (
+              <div className="p-1">
+                <VideoList videos={this.state.likedVideos} />
+              </div>
+            )}
+
+            {/* disliked videos */}
+            <div>
+              <span
+                onClick={() => this.getDislikedVideos()}
+                className="btn btn-sm btn-accent"
+              >
+                Get disliked videos
+              </span>
+            </div>
+            {this.state.dislikedVideos && (
+              <div className="p-1">
+                <VideoList videos={this.state.dislikedVideos} />
+              </div>
+            )}
           </>
         ) : (
           <span onClick={() => this.login()} className="btn btn-sm btn-accent">
@@ -138,6 +176,30 @@ class App extends React.Component<IProps, IState> {
         .getSubscriptions()
         .then((subscriptions) => {
           this.setState({ subscriptions: subscriptions });
+        })
+        .catch((error) => {
+          this.setState({ error: error });
+        });
+  }
+
+  getLikedVideos() {
+    if (this.state.apiConnection)
+      this.state.apiConnection
+        .getLikedVideos()
+        .then((videos) => {
+          this.setState({ likedVideos: videos });
+        })
+        .catch((error) => {
+          this.setState({ error: error });
+        });
+  }
+
+  getDislikedVideos() {
+    if (this.state.apiConnection)
+      this.state.apiConnection
+        .getLikedVideos(false)
+        .then((videos) => {
+          this.setState({ dislikedVideos: videos });
         })
         .catch((error) => {
           this.setState({ error: error });

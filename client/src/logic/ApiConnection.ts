@@ -4,6 +4,10 @@ import SubscriptionsResponse from "../data/youtube-api/SubscriptionsResponse";
 import ErrorResponse from "../data/youtube-api/ErrorResponse";
 import Channel from "../data/Channel";
 import moment from "moment";
+import Video from "../data/Video";
+import LikedVideosResponse, {
+  Thumbnail,
+} from "../data/youtube-api/LikedVideosResponse";
 
 interface PagedResponse<T> {
   items: T[];
@@ -13,6 +17,8 @@ interface PagedResponse<T> {
 type PageToken = string | undefined;
 
 type GetPagedResource<T> = (pageToken: PageToken) => Promise<PagedResponse<T>>;
+
+const YTAPIv3 = "https://www.googleapis.com/youtube/v3/";
 
 export default class ApiConnection {
   private apiKeys: ApiKeys;
@@ -62,7 +68,7 @@ export default class ApiConnection {
       if (this.youtubeClientAccessToken === undefined) return resolve(false);
 
       fetch(
-        `https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true&access_token=${encodeURIComponent(
+        `${YTAPIv3}channels?part=snippet&mine=true&access_token=${encodeURIComponent(
           this.youtubeClientAccessToken
         )}`
       )
@@ -94,7 +100,7 @@ export default class ApiConnection {
 
       this.getPaged<Channel>((pageToken) => {
         return fetch(
-          `https://www.googleapis.com/youtube/v3/subscriptions?part=snippet,contentDetails&maxResults=50&mine=true&access_token=${encodeURIComponent(
+          `${YTAPIv3}subscriptions?part=snippet,contentDetails&maxResults=50&mine=true&access_token=${encodeURIComponent(
             youtubeClientAccessToken
           )}${pageToken ? `&pageToken=${pageToken}` : ""}`
         )
@@ -146,16 +152,82 @@ export default class ApiConnection {
     });
   }
 
+  public async getLikedVideos(like = true): Promise<Video[]> {
+    return new Promise<Video[]>((resolve, reject) => {
+      if (this.youtubeClientAccessToken === undefined) return reject();
+      const youtubeClientAccessToken = this.youtubeClientAccessToken;
+
+      this.getPaged<Video>((pageToken) => {
+        return fetch(
+          `${YTAPIv3}videos?part=snippet,statistics&maxResults=50&myRating=${
+            !like ? "dis" : ""
+          }like&mine=${like}&access_token=${encodeURIComponent(
+            youtubeClientAccessToken
+          )}${pageToken ? `&pageToken=${pageToken}` : ""}`
+        )
+          .then((response) => response.json() as Promise<LikedVideosResponse>)
+          .then((data) => {
+            const result: PagedResponse<Video> = {
+              items: data.items.map((item) => {
+                const video = {
+                  id: item.id,
+                  categoryId: +item.snippet.categoryId,
+                  channel: {
+                    name: item.snippet.channelTitle,
+                    id: item.snippet.channelId,
+                  },
+                  published: moment(item.snippet.publishedAt),
+                  comments: +item.statistics.commentCount,
+                  likes: +item.statistics.likeCount,
+                  views: +item.statistics.viewCount,
+                  title: item.snippet.title,
+                } as Video;
+                let minW = 100000;
+                let maxW = 0;
+
+                Object.values(item.snippet.thumbnails).forEach(
+                  (value: Thumbnail) => {
+                    if (value.width < minW) {
+                      minW = value.width;
+                      video.thumbnail = value.url;
+                    }
+                    if (value.width > maxW) {
+                      maxW = value.width;
+                      video.image = value.url;
+                    }
+                  }
+                );
+                return video;
+              }),
+              nextPageToken: data.nextPageToken,
+            };
+            return result;
+          });
+      })
+        .then((channels) => {
+          resolve(channels);
+        })
+        .catch((error) => {
+          reject(error);
+        });
+    });
+  }
+
   private async getPaged<T>(
     getPagedResource: GetPagedResource<T>,
     elements: T[] = [],
-    pageToken: PageToken = undefined
+    pageToken: PageToken = undefined,
+    maxResults = 1000
   ) {
     return new Promise<T[]>((resolve, reject) =>
       getPagedResource(pageToken)
         .then((response: PagedResponse<T>) => {
           const items = [...elements, ...response.items];
-          if (response.items.length === 0 || !response.nextPageToken) {
+          if (
+            response.items.length === 0 ||
+            response.items.length >= maxResults ||
+            !response.nextPageToken
+          ) {
             resolve(items);
           } else {
             this.getPaged(getPagedResource, items, response.nextPageToken)
