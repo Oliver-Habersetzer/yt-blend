@@ -8,4 +8,6 @@
 <input id="room-id" hidden data-room-id="<%= @room_id %>"/>
 <input id="session-id" hidden data-session-id="<%= session[:session_id] %>"/>
 
+<button id="test-rtc">Test RTC</button>
+
 <%= link_to "Close room", session_destroy_path(@room_id), method: :delete %>

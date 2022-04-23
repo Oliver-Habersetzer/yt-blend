@@ -8,8 +8,7 @@ class SessionsController < ApplicationController
   end
 
   def broadcast
-    ActionCable.server.broadcast "room_#{broadcast_params[:room_id]}", {
-      :message => broadcast_params[:message], :from => broadcast_params[:user]}
+    ActionCable.server.broadcast "room_#{broadcast_params[:room_id]}", broadcast_params.except(:room_id)
   end
 
   def index
@@ -42,7 +41,7 @@ class SessionsController < ApplicationController
   private
 
   def broadcast_params
-    params.require(:session).permit(:room_id, :user, :message)
+    params.require(:session).permit(:room_id, :user, :to, :type, :message, :sdp, :candidate)
   end
 
 end
