@@ -8,6 +8,9 @@ import Video from "../data/Video";
 import LikedVideosResponse, {
   Thumbnail,
 } from "../data/youtube-api/LikedVideosResponse";
+import UserInfo from "../data/UserInfo";
+import Category from "../data/Category";
+import { CategoriesResponse } from "../data/youtube-api/CategoriesResponse";
 
 interface PagedResponse<T> {
   items: T[];
@@ -152,6 +155,43 @@ export default class ApiConnection {
     });
   }
 
+  public async getCategories(regionCode = "US"): Promise<Category[]> {
+    return new Promise<Category[]>((resolve, reject) => {
+      if (this.youtubeClientAccessToken === undefined) return reject();
+      const youtubeClientAccessToken = this.youtubeClientAccessToken;
+
+      this.getPaged<Category>((pageToken) => {
+        return fetch(
+          `${YTAPIv3}videoCategories?part=snippet&regionCode=${regionCode}&maxResults=50&access_token=${encodeURIComponent(
+            youtubeClientAccessToken
+          )}${pageToken ? `&pageToken=${pageToken}` : ""}`
+        )
+          .then((response) => response.json() as Promise<CategoriesResponse>)
+          .then((data) => {
+            const result: PagedResponse<Category> = {
+              items: data.items
+                .filter((item) => item.snippet && item.snippet.title)
+                .map(
+                  (item) =>
+                    ({
+                      id: +item.id,
+                      name: item.snippet.title,
+                    } as Category)
+                ),
+              nextPageToken: data.nextPageToken,
+            };
+            return result;
+          });
+      })
+        .then((channels) => {
+          resolve(channels);
+        })
+        .catch((error) => {
+          reject(error);
+        });
+    });
+  }
+
   public async getLikedVideos(like = true): Promise<Video[]> {
     return new Promise<Video[]>((resolve, reject) => {
       if (this.youtubeClientAccessToken === undefined) return reject();
@@ -237,6 +277,33 @@ export default class ApiConnection {
         })
         .catch(reject)
     );
+  }
+
+  public async getUserInfo(): Promise<UserInfo> {
+    return new Promise<UserInfo>((resolve, reject) => {
+      const result = new UserInfo();
+      this.getSubscriptions()
+        .then((subscriptions) => {
+          result.subscriptions = subscriptions;
+          return this.getLikedVideos(true);
+        })
+        .then((likedVideos) => {
+          result.likedVideos = likedVideos;
+          return this.getLikedVideos(false);
+        })
+        .then((dislikedVideos) => {
+          result.dislikedVideos = dislikedVideos;
+          return this.getCategories();
+        })
+        .then((categories) => {
+          result.categories = new Map<number, string>();
+          categories.forEach((category) => {
+            result.categories?.set(category.id, category.name);
+          });
+          return resolve(result.evaluate());
+        })
+        .catch((error) => reject(error));
+    });
   }
 
   /*

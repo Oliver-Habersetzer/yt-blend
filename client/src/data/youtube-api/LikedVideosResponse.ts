@@ -57,5 +57,6 @@ export default interface LikedVideosResponse {
   etag: string;
   items: Item[];
   nextPageToken: string;
+  prevPageToken: string;
   pageInfo: PageInfo;
 }

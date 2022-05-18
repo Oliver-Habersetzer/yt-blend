@@ -6,10 +6,12 @@ import ApiConnection from "./logic/ApiConnection";
 import { Cookies, withCookies } from "react-cookie";
 import "./style.scss";
 import { Alert } from "react-bootstrap";
-import Channel from "./data/Channel";
 import ChannelList from "./Components/ChannelList";
-import Video from "./data/Video";
 import VideoList from "./Components/VideoList";
+import UserInfo from "./data/UserInfo";
+import CategoryList from "./Components/CategoryList";
+import EvaluationComponent from "./Components/EvaluationComponent";
+import { humanFileSize } from "./utils";
 
 interface IState {
   apiConnection?: ApiConnection;
@@ -17,9 +19,15 @@ interface IState {
   username?: string;
   error?: string;
 
-  subscriptions?: Channel[];
-  likedVideos?: Video[];
-  dislikedVideos?: Video[];
+  userInfo?: UserInfo;
+
+  expanded: {
+    subscriptions: boolean;
+    likedVideos: boolean;
+    dislikedVideos: boolean;
+    categories: boolean;
+    evaluation: boolean;
+  };
 }
 
 interface IProps {
@@ -61,6 +69,13 @@ class App extends React.Component<IProps, IState> {
 
     this.state = {
       isLoggedIn: false,
+      expanded: {
+        subscriptions: false,
+        likedVideos: false,
+        dislikedVideos: false,
+        categories: false,
+        evaluation: false,
+      },
     };
   }
 
@@ -88,6 +103,9 @@ class App extends React.Component<IProps, IState> {
   }
 
   render() {
+    const data = JSON.stringify(this.state.userInfo);
+    const bytes = new TextEncoder().encode(data).length;
+
     return (
       <div className="container">
         {this.state.error && (
@@ -95,6 +113,7 @@ class App extends React.Component<IProps, IState> {
         )}
         {this.state.isLoggedIn ? (
           <>
+            {/* Log out */}
             <div>
               <span>
                 Logged in{this.state.username && <> as {this.state.username}</>}
@@ -107,48 +126,150 @@ class App extends React.Component<IProps, IState> {
               </span>
             </div>
 
-            {/* subscriptions */}
+            {/* Get user info */}
             <div>
               <span
-                onClick={() => this.getSubscriptions()}
+                onClick={() => this.getUserInfo()}
                 className="btn btn-sm btn-accent"
               >
-                Get subscriptions
+                Get all user info
               </span>
             </div>
-            {this.state.subscriptions && (
-              <div className="p-1">
-                <ChannelList channels={this.state.subscriptions} />
-              </div>
+
+            {this.state.userInfo?.subscriptions && (
+              <>
+                <h3>Subscriptions</h3>
+                <span
+                  onClick={() => {
+                    this.setState({
+                      expanded: {
+                        ...this.state.expanded,
+                        subscriptions: !this.state.expanded.subscriptions,
+                      },
+                    });
+                  }}
+                  className="btn btn-sm btn-accent"
+                >
+                  {(this.state.expanded.subscriptions ? "Hide" : "Show") +
+                    " Subscriptions"}
+                </span>
+                {this.state.expanded.subscriptions && (
+                  <div className="p-1">
+                    <ChannelList channels={this.state.userInfo.subscriptions} />
+                  </div>
+                )}
+              </>
             )}
 
-            {/* liked videos */}
-            <div>
-              <span
-                onClick={() => this.getLikedVideos()}
-                className="btn btn-sm btn-accent"
-              >
-                Get liked videos
-              </span>
-            </div>
-            {this.state.likedVideos && (
-              <div className="p-1">
-                <VideoList videos={this.state.likedVideos} />
-              </div>
+            {this.state.userInfo?.likedVideos && (
+              <>
+                <h3>Liked Videos</h3>
+                <span
+                  onClick={() => {
+                    this.setState({
+                      expanded: {
+                        ...this.state.expanded,
+                        likedVideos: !this.state.expanded.likedVideos,
+                      },
+                    });
+                  }}
+                  className="btn btn-sm btn-accent"
+                >
+                  {(this.state.expanded.likedVideos ? "Hide" : "Show") +
+                    " Liked Videos"}
+                </span>
+                {this.state.expanded.likedVideos && (
+                  <div className="p-1">
+                    <VideoList videos={this.state.userInfo.likedVideos} />
+                  </div>
+                )}
+              </>
             )}
 
-            {/* disliked videos */}
-            <div>
-              <span
-                onClick={() => this.getDislikedVideos()}
-                className="btn btn-sm btn-accent"
-              >
-                Get disliked videos
-              </span>
-            </div>
-            {this.state.dislikedVideos && (
-              <div className="p-1">
-                <VideoList videos={this.state.dislikedVideos} />
+            {this.state.userInfo?.dislikedVideos && (
+              <>
+                <h3>Disliked Videos</h3>
+                <span
+                  onClick={() => {
+                    this.setState({
+                      expanded: {
+                        ...this.state.expanded,
+                        dislikedVideos: !this.state.expanded.dislikedVideos,
+                      },
+                    });
+                  }}
+                  className="btn btn-sm btn-accent"
+                >
+                  {(this.state.expanded.dislikedVideos ? "Hide" : "Show") +
+                    " Disiked Videos"}
+                </span>
+                {this.state.expanded.dislikedVideos && (
+                  <div className="p-1">
+                    <VideoList videos={this.state.userInfo.dislikedVideos} />
+                  </div>
+                )}
+              </>
+            )}
+
+            {this.state.userInfo?.categories && (
+              <>
+                <h3>Categories</h3>
+                <span
+                  onClick={() => {
+                    this.setState({
+                      expanded: {
+                        ...this.state.expanded,
+                        categories: !this.state.expanded.categories,
+                      },
+                    });
+                  }}
+                  className="btn btn-sm btn-accent"
+                >
+                  {(this.state.expanded.categories ? "Hide" : "Show") +
+                    " Categories"}
+                </span>
+                {this.state.expanded.categories && (
+                  <div className="p-1">
+                    <CategoryList categories={this.state.userInfo.categories} />
+                  </div>
+                )}
+              </>
+            )}
+
+            {this.state.userInfo?.evaluation && (
+              <>
+                <h3>Evaluation</h3>
+                <span
+                  onClick={() => {
+                    this.setState({
+                      expanded: {
+                        ...this.state.expanded,
+                        evaluation: !this.state.expanded.evaluation,
+                      },
+                    });
+                  }}
+                  className="btn btn-sm btn-accent"
+                >
+                  {(this.state.expanded.evaluation ? "Hide" : "Show") +
+                    " Categories"}
+                </span>{" "}
+                {this.state.expanded.evaluation &&
+                  this.state.userInfo.categories && (
+                    <EvaluationComponent
+                      evaluation={this.state.userInfo.evaluation}
+                      categories={this.state.userInfo.categories}
+                    />
+                  )}
+              </>
+            )}
+
+            {this.state.userInfo && (
+              <div>
+                <h3>Metadata</h3>
+                <p>
+                  <b>Data size:</b>
+                  {` ${data.length} characters, ${humanFileSize(bytes)}`}
+                </p>
               </div>
             )}
           </>
@@ -170,36 +291,14 @@ class App extends React.Component<IProps, IState> {
     window.location.reload();
   }
 
-  getSubscriptions() {
+  getUserInfo() {
     if (this.state.apiConnection)
       this.state.apiConnection
-        .getSubscriptions()
-        .then((subscriptions) => {
-          this.setState({ subscriptions: subscriptions });
-        })
-        .catch((error) => {
-          this.setState({ error: error });
-        });
-  }
-
-  getLikedVideos() {
-    if (this.state.apiConnection)
-      this.state.apiConnection
-        .getLikedVideos()
-        .then((videos) => {
-          this.setState({ likedVideos: videos });
-        })
-        .catch((error) => {
-          this.setState({ error: error });
-        });
-  }
-
-  getDislikedVideos() {
-    if (this.state.apiConnection)
-      this.state.apiConnection
-        .getLikedVideos(false)
-        .then((videos) => {
-          this.setState({ dislikedVideos: videos });
+        .getUserInfo()
+        .then((userInfo) => {
+          this.setState({
+            userInfo: userInfo,
+          });
         })
         .catch((error) => {
           this.setState({ error: error });
